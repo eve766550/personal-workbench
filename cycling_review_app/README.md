@@ -33,6 +33,24 @@ py app.py
 \.venv\Scripts\python.exe app.py
 ```
 
+## 部署为公开网址（Render）
+
+这个项目也可以部署到 Render，得到一个任何人都能打开的 `onrender.com` 网址。GitHub 只负责保存代码，Render 负责运行 Flask 服务。
+
+1. 打开 <https://render.com>，使用 GitHub 登录。
+2. 点击 **New > Web Service**，选择 `eve766550/personal-workbench` 仓库。
+3. 在 **Root Directory** 填写 `cycling_review_app`。
+4. 设置 **Build Command** 为 `pip install -r requirements.txt`。
+5. 设置 **Start Command** 为 `gunicorn app:app`。
+6. 选择免费实例并点击部署。项目已经包含 `Procfile`，它也记录了生产环境启动命令。
+
+部署完成后，Render 会生成一个公开网址。免费实例可能会自动休眠，第一次打开时需要等待几秒。
+
+公开部署前请注意两点：
+
+- 当前版本没有用户注册和登录，所以公开网址上的任何人都可以查看、添加、修改和删除骑行记录。建议公开演示时使用示例数据，不要录入隐私数据。
+- SQLite 文件适合本地学习和演示。免费云服务的本地磁盘可能在重新部署或重启后被清空；如果要长期保存真实数据，需要后续接入 PostgreSQL 或带持久磁盘的部署方案。
+
 ## 运行测试
 
 ```powershell

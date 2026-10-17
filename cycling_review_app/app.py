@@ -1,6 +1,7 @@
 """骑行复盘助手的 Flask 应用入口。"""
 
 from datetime import date, datetime
+import os
 from pathlib import Path
 
 from flask import Flask, abort, flash, redirect, render_template, request, url_for
@@ -44,7 +45,7 @@ def create_app(test_config=None):
 
     app = Flask(__name__)
     app.config.from_mapping(
-        SECRET_KEY="cycling-review-dev-key",
+        SECRET_KEY=os.environ.get("SECRET_KEY", "cycling-review-dev-key"),
         DATABASE=str(Path(app.root_path) / "data" / "cycling.sqlite3"),
     )
 
@@ -413,6 +414,14 @@ def optional_int(field, label, form, ride, errors, minimum=None, maximum=None):
     ride[field] = number
 
 
+# Gunicorn uses this module-level application object in production.
+app = create_app()
+
+
 if __name__ == "__main__":
-    create_app().run(debug=True)
+    app.run(
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", "5000")),
+        debug=True,
+    )
 
