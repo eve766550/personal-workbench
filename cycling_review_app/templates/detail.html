@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ record["ride_date"] }} · 骑行详情{% endblock %}
+
+{% block content %}
+<section class="page-heading compact-heading">
+  <div>
+    <p class="section-kicker">骑行详情</p>
+    <h1>{{ record["ride_date"] }}</h1>
+    <p class="page-intro">这次骑行的完整记录。</p>
+  </div>
+  <div class="heading-actions">
+    <a class="button button-primary" href="{{ url_for('edit_record', record_id=record['id']) }}">编辑记录</a>
+    <a class="button button-secondary" href="{{ url_for('index') }}">返回列表</a>
+  </div>
+</section>
+
+<section class="detail-hero">
+  <div>
+    <span class="detail-label">骑行距离</span>
+    <strong>{{ record["distance_km"]|num(1) }} <small>km</small></strong>
+  </div>
+  <div>
+    <span class="detail-label">骑行时长</span>
+    <strong>{{ record["duration_minutes"] }} <small>分钟</small></strong>
+  </div>
+  <div>
+    <span class="detail-label">平均速度</span>
+    <strong>{{ record["average_speed"]|num(1) }} <small>km/h</small></strong>
+  </div>
+</section>
+
+<section class="detail-section">
+  <h2>运动数据</h2>
+  <dl class="detail-grid">
+    <div><dt>平均心率</dt><dd>{{ record["average_heart_rate"]|num(0) }} <small>bpm</small></dd></div>
+    <div><dt>最大心率</dt><dd>{{ record["max_heart_rate"]|num(0) }} <small>bpm</small></dd></div>
+    <div><dt>累计爬升</dt><dd>{{ record["elevation_gain"]|num(0) }} <small>m</small></dd></div>
+    <div><dt>主观疲劳程度</dt><dd>{{ record["fatigue"]|num(0) }} <small>/ 10</small></dd></div>
+  </dl>
+</section>
+
+<section class="detail-section">
+  <h2>复盘备注</h2>
+  {% if record["notes"] %}
+    <p class="notes">{{ record["notes"] }}</p>
+  {% else %}
+    <p class="muted">这次没有填写备注。</p>
+  {% endif %}
+</section>
+
+<section class="detail-danger-zone">
+  <div>
+    <h2>删除这条记录</h2>
+    <p>删除后不能恢复，请确认你不再需要它。</p>
+  </div>
+  <form method="post" action="{{ url_for('remove_record', record_id=record['id']) }}" data-confirm-delete>
+    <button class="button button-danger" type="submit">删除记录</button>
+  </form>
+</section>
+{% endblock %}
+

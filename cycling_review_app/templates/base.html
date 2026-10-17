@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}骑行复盘助手{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <a class="brand" href="{{ url_for('index') }}">
+        <span class="brand-mark" aria-hidden="true">R</span>
+        <span>骑行复盘助手</span>
+      </a>
+      <nav class="header-nav" aria-label="主要导航">
+        <a href="{{ url_for('index') }}">骑行记录</a>
+        <a href="{{ url_for('plans') }}">训练计划</a>
+        <a class="header-link" href="{{ url_for('new_record') }}">新增记录</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="shell page-content">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-stack" aria-live="polite">
+          {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="shell">第一阶段 · 本地 SQLite 数据</div>
+  </footer>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
+

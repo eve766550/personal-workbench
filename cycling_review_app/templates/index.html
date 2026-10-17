@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}骑行记录 · 骑行复盘助手{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="section-kicker">个人骑行数据</p>
+    <h1>骑行记录</h1>
+    <p class="page-intro">把每次出发留下来，之后复盘会更有依据。</p>
+  </div>
+  <div class="heading-actions">
+    <a class="button button-secondary" href="{{ url_for('plans') }}">查看训练计划</a>
+    <a class="button button-primary" href="{{ url_for('new_record') }}">新增骑行</a>
+  </div>
+</section>
+
+{% if records %}
+  <section class="summary-grid" aria-label="记录概览">
+    <div class="summary-item">
+      <span>记录次数</span>
+      <strong>{{ records|length }}</strong>
+    </div>
+    <div class="summary-item">
+      <span>累计距离</span>
+      <strong>{{ records|sum(attribute='distance_km')|num(1) }} <small>km</small></strong>
+    </div>
+    <div class="summary-item">
+      <span>累计时长</span>
+      <strong>{{ records|sum(attribute='duration_minutes')|num(0) }} <small>分钟</small></strong>
+    </div>
+  </section>
+
+  <section class="record-list" aria-label="骑行记录列表">
+    {% for record in records %}
+      <article class="record-card">
+        <div class="record-card-main">
+          <div class="record-date">{{ record["ride_date"] }}</div>
+          <h2>{{ record["distance_km"]|num(1) }} <span>km</span></h2>
+          <div class="record-meta">
+            <span>{{ record["duration_minutes"] }} 分钟</span>
+            <span>平均 {{ record["average_speed"]|num(1) }} km/h</span>
+            <span>疲劳 {{ record["fatigue"]|num(0) }}/10</span>
+          </div>
+        </div>
+        <div class="record-card-actions">
+          <a class="button button-secondary" href="{{ url_for('record_detail', record_id=record['id']) }}">查看详情</a>
+          <a class="text-link" href="{{ url_for('edit_record', record_id=record['id']) }}">编辑</a>
+          <form method="post" action="{{ url_for('remove_record', record_id=record['id']) }}" data-confirm-delete>
+            <button class="button-link danger-link" type="submit">删除</button>
+          </form>
+        </div>
+      </article>
+    {% endfor %}
+  </section>
+{% else %}
+  <section class="empty-state">
+    <div class="empty-icon" aria-hidden="true">+</div>
+    <h2>还没有骑行记录</h2>
+    <p>完成一次骑行后，记下数据，开始你的第一条复盘。</p>
+    <a class="button button-primary" href="{{ url_for('new_record') }}">录入第一条记录</a>
+  </section>
+{% endif %}
+{% endblock %}
+

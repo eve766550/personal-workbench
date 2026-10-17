@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}生成训练计划 · 骑行复盘助手{% endblock %}
+
+{% block content %}
+<section class="page-heading compact-heading">
+  <div>
+    <p class="section-kicker">计划设置</p>
+    <h1>生成训练计划</h1>
+    <p class="page-intro">计划会参考最近 6 周的记录，并用保守的增量安排训练。</p>
+  </div>
+</section>
+
+{% if errors %}
+  <div class="error-summary" role="alert">
+    <strong>请先检查下面的内容：</strong>
+    <ul>
+      {% for message in errors.values() %}
+        <li>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+<section class="analysis-panel">
+  <div class="analysis-panel-heading">
+    <div>
+      <span class="plan-card-label">历史数据分析</span>
+      <h2>你的近期起点</h2>
+    </div>
+    <span class="analysis-window">{{ analysis["window_start"] }} 至 {{ analysis["window_end"] }}</span>
+  </div>
+  {% if analysis["data_warning"] %}
+    <p class="plan-warning">{{ analysis["data_warning"] }}</p>
+  {% endif %}
+  <div class="analysis-grid">
+    <div><span>记录次数</span><strong>{{ analysis["recent_ride_count"] }}</strong></div>
+    <div><span>平均每周</span><strong>{{ analysis["average_weekly_km"]|num(1) }} <small>km</small></strong></div>
+    <div><span>最长单次</span><strong>{{ analysis["longest_distance_km"]|num(1) }} <small>km</small></strong></div>
+    <div><span>平均疲劳</span><strong>{{ analysis["average_fatigue"]|num(1) }} <small>/ 10</small></strong></div>
+  </div>
+</section>
+
+<form class="ride-form" method="post">
+  <section class="form-section">
+    <h2>计划设置</h2>
+    <div class="form-grid">
+      <div class="field field-wide">
+        <label for="goal">训练目标 <span>*</span></label>
+        <select id="goal" name="goal" required>
+          {% for value, label in goal_options.items() %}
+            <option value="{{ value }}" {% if form.get('goal') == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        {% if errors.get('goal') %}<small class="field-error">{{ errors['goal'] }}</small>{% endif %}
+      </div>
+      <div class="field">
+        <label for="weeks">计划周期 <span>*</span></label>
+        <select id="weeks" name="weeks" required>
+          {% for value in (4, 8) %}
+            <option value="{{ value }}" {% if form.get('weeks')|string == value|string %}selected{% endif %}>{{ value }} 周</option>
+          {% endfor %}
+        </select>
+        {% if errors.get('weeks') %}<small class="field-error">{{ errors['weeks'] }}</small>{% endif %}
+      </div>
+      <div class="field">
+        <label for="rides_per_week">每周骑行次数 <span>*</span></label>
+        <select id="rides_per_week" name="rides_per_week" required>
+          {% for value in (2, 3, 4) %}
+            <option value="{{ value }}" {% if form.get('rides_per_week')|string == value|string %}selected{% endif %}>每周 {{ value }} 次</option>
+          {% endfor %}
+        </select>
+        {% if errors.get('rides_per_week') %}<small class="field-error">{{ errors['rides_per_week'] }}</small>{% endif %}
+      </div>
+      <div class="field field-wide">
+        <label for="start_date">计划开始日期 <span>*</span></label>
+        <input id="start_date" name="start_date" type="date" required value="{{ form.get('start_date', '') }}">
+        {% if errors.get('start_date') %}<small class="field-error">{{ errors['start_date'] }}</small>{% endif %}
+      </div>
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <button class="button button-primary" type="submit">生成计划</button>
+    <a class="button button-secondary" href="{{ url_for('plans') }}">取消</a>
+  </div>
+</form>
+{% endblock %}
+

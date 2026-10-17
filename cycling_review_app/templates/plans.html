@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}训练计划 · 骑行复盘助手{% endblock %}
+
+{% block content %}
+<section class="page-heading">
+  <div>
+    <p class="section-kicker">循序渐进</p>
+    <h1>训练计划</h1>
+    <p class="page-intro">根据你最近的骑行记录，安排接下来几周的训练节奏。</p>
+  </div>
+  <a class="button button-primary" href="{{ url_for('new_plan') }}">生成新计划</a>
+</section>
+
+{% if plans %}
+  <section class="plan-list" aria-label="训练计划列表">
+    {% for plan in plans %}
+      <a class="plan-card" href="{{ url_for('plan_detail', plan_id=plan['id']) }}">
+        <div class="plan-card-heading">
+          <div>
+            <span class="plan-card-label">{{ plan["start_date"] }} 开始</span>
+            <h2>{{ plan["goal_label"] }}</h2>
+          </div>
+          <span class="plan-arrow" aria-hidden="true">→</span>
+        </div>
+        <div class="plan-card-meta">
+          <span>{{ plan["weeks"] }} 周</span>
+          <span>每周 {{ plan["rides_per_week"] }} 次</span>
+          <span>已完成 {{ plan["completed_count"] }}/{{ plan["session_count"] }} 次</span>
+        </div>
+      </a>
+    {% endfor %}
+  </section>
+{% else %}
+  <section class="empty-state">
+    <div class="empty-icon" aria-hidden="true">+</div>
+    <h2>还没有训练计划</h2>
+    <p>先录入几次骑行，或者直接用保守起点生成你的第一份计划。</p>
+    <a class="button button-primary" href="{{ url_for('new_plan') }}">开始生成计划</a>
+  </section>
+{% endif %}
+{% endblock %}
+

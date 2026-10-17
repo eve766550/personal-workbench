@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% if is_edit %}
+  {% set page_title = "编辑骑行记录" %}
+{% else %}
+  {% set page_title = "新增骑行记录" %}
+{% endif %}
+{% block title %}{{ page_title }} · 骑行复盘助手{% endblock %}
+
+{% block content %}
+<section class="page-heading compact-heading">
+  <div>
+    <p class="section-kicker">数据录入</p>
+    <h1>{{ page_title }}</h1>
+    <p class="page-intro">带 * 的项目必须填写，其他数据可以之后补充。</p>
+  </div>
+</section>
+
+{% if errors %}
+  <div class="error-summary" role="alert">
+    <strong>请先检查下面的内容：</strong>
+    <ul>
+      {% for message in errors.values() %}
+        <li>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}
+
+<form class="ride-form" method="post" data-ride-form>
+  <section class="form-section">
+    <h2>基础数据</h2>
+    <div class="form-grid">
+      <div class="field field-wide">
+        <label for="ride_date">日期 <span>*</span></label>
+        <input id="ride_date" name="ride_date" type="date" required value="{{ form.get('ride_date', '') }}">
+        {% if errors.get('ride_date') %}<small class="field-error">{{ errors['ride_date'] }}</small>{% endif %}
+      </div>
+      <div class="field">
+        <label for="distance_km">距离（km） <span>*</span></label>
+        <input id="distance_km" name="distance_km" type="number" min="0.01" step="0.01" required inputmode="decimal" value="{{ form.get('distance_km', '') }}" placeholder="例如 42.5">
+        {% if errors.get('distance_km') %}<small class="field-error">{{ errors['distance_km'] }}</small>{% endif %}
+      </div>
+      <div class="field">
+        <label for="duration_minutes">骑行时长（分钟） <span>*</span></label>
+        <input id="duration_minutes" name="duration_minutes" type="number" min="1" step="1" required inputmode="numeric" value="{{ form.get('duration_minutes', '') }}" placeholder="例如 120">
+        {% if errors.get('duration_minutes') %}<small class="field-error">{{ errors['duration_minutes'] }}</small>{% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2>运动数据</h2>
+    <div class="form-grid">
+      <div class="field">
+        <label for="average_speed">平均速度（km/h）</label>
+        <input id="average_speed" name="average_speed" type="number" min="0" step="0.01" inputmode="decimal" value="{{ form.get('average_speed', '') }}" placeholder="例如 21.25">
+        {% if errors.get('average_speed') %}<small class="field-error">{{ errors['average_speed'] }}</small>{% endif %}
+      </div>
+      <div class="field">
+        <label for="average_heart_rate">平均心率（bpm）</label>
+        <input id="average_heart_rate" name="average_heart_rate" type="number" min="0" step="1" inputmode="numeric" value="{{ form.get('average_heart_rate', '') }}" placeholder="例如 145">
+        {% if errors.get('average_heart_rate') %}<small class="field-error">{{ errors['average_heart_rate'] }}</small>{% endif %}
+      </div>
+      <div class="field">
+        <label for="max_heart_rate">最大心率（bpm）</label>
+        <input id="max_heart_rate" name="max_heart_rate" type="number" min="0" step="1" inputmode="numeric" value="{{ form.get('max_heart_rate', '') }}" placeholder="例如 176">
+        {% if errors.get('max_heart_rate') %}<small class="field-error">{{ errors['max_heart_rate'] }}</small>{% endif %}
+      </div>
+      <div class="field">
+        <label for="elevation_gain">累计爬升（m）</label>
+        <input id="elevation_gain" name="elevation_gain" type="number" min="0" step="1" inputmode="numeric" value="{{ form.get('elevation_gain', '') }}" placeholder="例如 380">
+        {% if errors.get('elevation_gain') %}<small class="field-error">{{ errors['elevation_gain'] }}</small>{% endif %}
+      </div>
+      <div class="field">
+        <label for="fatigue">主观疲劳程度（1～10）</label>
+        <select id="fatigue" name="fatigue">
+          <option value="">暂不填写</option>
+          {% for score in range(1, 11) %}
+            <option value="{{ score }}" {% if form.get('fatigue')|string == score|string %}selected{% endif %}>{{ score }} 分{% if score == 1 %}（很轻松）{% elif score == 10 %}（非常疲劳）{% endif %}</option>
+          {% endfor %}
+        </select>
+        {% if errors.get('fatigue') %}<small class="field-error">{{ errors['fatigue'] }}</small>{% endif %}
+      </div>
+    </div>
+  </section>
+
+  <section class="form-section">
+    <h2>复盘备注</h2>
+    <div class="field">
+      <label for="notes">备注</label>
+      <textarea id="notes" name="notes" rows="5" maxlength="2000" placeholder="记录路线、天气、身体感受或下次想调整的地方">{{ form.get('notes', '') or '' }}</textarea>
+      <small class="field-hint">最多 2000 个字符。</small>
+      {% if errors.get('notes') %}<small class="field-error">{{ errors['notes'] }}</small>{% endif %}
+    </div>
+  </section>
+
+  <div class="form-actions">
+    <button class="button button-primary" type="submit">保存记录</button>
+    <a class="button button-secondary" href="{% if is_edit %}{{ url_for('record_detail', record_id=record_id) }}{% else %}{{ url_for('index') }}{% endif %}">取消</a>
+  </div>
+</form>
+{% endblock %}
+

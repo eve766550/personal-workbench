@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ plan["goal_label"] }} · 训练计划{% endblock %}
+
+{% block content %}
+<section class="page-heading compact-heading">
+  <div>
+    <p class="section-kicker">训练计划</p>
+    <h1>{{ plan["goal_label"] }}</h1>
+    <p class="page-intro">从 {{ plan["start_date"] }} 开始，共 {{ plan["weeks"] }} 周，每周 {{ plan["rides_per_week"] }} 次。</p>
+  </div>
+  <div class="heading-actions">
+    <a class="button button-primary" href="{{ url_for('new_plan') }}">生成新计划</a>
+    <a class="button button-secondary" href="{{ url_for('plans') }}">计划列表</a>
+  </div>
+</section>
+
+{% if errors %}
+  <div class="error-summary" role="alert">
+    {% for message in errors.values() %}<div>{{ message }}</div>{% endfor %}
+  </div>
+{% endif %}
+
+<section class="plan-summary">
+  <div><span>历史平均每周</span><strong>{{ plan["baseline_weekly_km"]|num(1) }} <small>km</small></strong></div>
+  <div><span>历史最长单次</span><strong>{{ plan["baseline_longest_km"]|num(1) }} <small>km</small></strong></div>
+  <div><span>参考记录</span><strong>{{ plan["source_ride_count"] }} <small>次</small></strong></div>
+  <div><span>平均疲劳</span><strong>{{ plan["average_fatigue"]|num(1) }} <small>/ 10</small></strong></div>
+</section>
+
+{% if plan["data_warning"] %}
+  <div class="plan-warning">{{ plan["data_warning"] }}</div>
+{% endif %}
+
+<section class="rationale-section">
+  <h2>为什么这样安排</h2>
+  <ul class="rationale-list">
+    {% for item in rationale %}<li>{{ item }}</li>{% endfor %}
+  </ul>
+</section>
+
+<section class="weeks-section">
+  <div class="section-title-row">
+    <div>
+      <p class="section-kicker">逐周执行</p>
+      <h2>训练安排</h2>
+    </div>
+    <span class="section-note">保存距离后，可以按自己的状态微调</span>
+  </div>
+
+  <div class="week-list">
+    {% for week in week_groups %}
+      <section class="week-card {% if week['is_recovery'] %}week-recovery{% endif %}">
+        <div class="week-heading">
+          <div>
+            <h3>第 {{ week["week_number"] }} 周{% if week["is_recovery"] %}<span class="recovery-label">恢复周</span>{% endif %}</h3>
+            <span>{{ week["total_distance_km"]|num(1) }} km 周总量</span>
+          </div>
+        </div>
+        <div class="session-list">
+          {% for session in week["sessions"] %}
+            <form class="session-row {% if session['completed'] %}session-completed{% endif %}" method="post" action="{{ url_for('update_plan_session', plan_id=plan['id'], session_id=session['id']) }}">
+              <div class="session-main">
+                <div class="session-date">{{ session["session_date"] }}</div>
+                <h4>{{ session["title"] }}</h4>
+                <p>{{ session["description"] }}</p>
+              </div>
+              <div class="session-controls">
+                <label>
+                  <span>目标距离</span>
+                  <input name="target_distance_km" type="number" min="0.1" max="1000" step="0.1" value="{{ session['target_distance_km']|num(1) }}" inputmode="decimal">
+                </label>
+                <label class="completed-control">
+                  <input name="completed" type="checkbox" value="1" {% if session["completed"] %}checked{% endif %}>
+                  <span>已完成</span>
+                </label>
+                <button class="button button-secondary session-save" type="submit">保存</button>
+              </div>
+            </form>
+          {% endfor %}
+        </div>
+      </section>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
+
