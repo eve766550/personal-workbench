@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人工作台 · 个人计划</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="plan">
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar">
+        <div>
+          <h1>个人计划</h1>
+          <div class="sub">把目标拆成每天能做的小事</div>
+        </div>
+        <div class="date" id="top-date"></div>
+      </header>
+      <div class="content">
+
+        <h3 class="section-title">每日计划</h3>
+        <div class="card">
+          <div class="form-row">
+            <div class="field"><label>日期</label>
+              <input id="p-date" type="date" style="width:160px;"></div>
+            <div class="field w-title"><label>今天要做的（写一句就做一句）</label>
+              <input id="p-text" type="text" placeholder="如：写一篇纳指复盘笔记"></div>
+            <button class="btn-primary" id="p-add">添加</button>
+          </div>
+          <div style="margin:0 0 10px;">
+            <button class="btn-mini" id="p-carry">把未完成的顺延到今天</button>
+            <span class="muted" id="p-carry-hint" style="font-size:12px;margin-left:8px;"></span>
+          </div>
+          <div id="plan-list"></div>
+        </div>
+
+        <h3 class="section-title">目标追踪</h3>
+        <div class="card">
+          <div class="form-row">
+            <div class="field w-title"><label>目标名</label>
+              <input id="g-name" type="text" placeholder="如：小红书粉丝破万"></div>
+            <div class="field"><label>起始值</label>
+              <input id="g-start" type="number" placeholder="0" style="width:90px;"></div>
+            <div class="field"><label>当前值</label>
+              <input id="g-cur" type="number" placeholder="0" style="width:90px;"></div>
+            <div class="field"><label>目标值</label>
+              <input id="g-target" type="number" placeholder="10000" style="width:90px;"></div>
+            <button class="btn-primary" id="g-add">添加</button>
+          </div>
+          <div id="goal-list"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <nav class="bottom-nav" id="bottomNav"></nav>
+
+  <script src="assets/app.js"></script>
+  <script>
+  (function () {
+    document.getElementById('top-date').textContent = cnDate();
+    var dateInput = document.getElementById('p-date');
+    dateInput.value = todayStr();
+
+    /* ---------- 每日计划 ---------- */
+    function planList() { return Store.get('plan.tasks', []); }
+    function renderPlan() {
+      var date = dateInput.value;
+      var arr = planList().filter(function (x) { return x.date === date; });
+      var box = document.getElementById('plan-list');
+      if (!arr.length) {
+        box.innerHTML = '<div class="empty">这一天还没有计划，写一条吧</div>';
+        return;
+      }
+      box.innerHTML = arr.map(function (x) {
+        return '<div class="item"><div class="body"><label style="display:flex;align-items:center;gap:10px;cursor:pointer;">' +
+          '<input type="checkbox" ' + (x.done ? 'checked' : '') + ' data-id="' + x.id + '" style="width:16px;height:16px;accent-color:var(--primary);">' +
+          '<span style="' + (x.done ? 'text-decoration:line-through;color:var(--muted);' : '') + '">' + escapeHtml(x.text) + '</span>' +
+          '</label></div>' +
+          '<button class="btn-mini" data-del="' + x.id + '">删除</button></div>';
+      }).join('');
+    }
+    document.getElementById('p-add').addEventListener('click', function () {
+      var text = document.getElementById('p-text').value.trim();
+      if (!text) { alert('先写今天要做什么'); return; }
+      Store.add('plan.tasks', { date: dateInput.value, text: text, done: false });
+      document.getElementById('p-text').value = '';
+      renderPlan();
+    });
+    dateInput.addEventListener('change', renderPlan);
+    document.getElementById('plan-list').addEventListener('click', function (e) {
+      if (e.target.type === 'checkbox') {
+        Store.update('plan.tasks', e.target.dataset.id, { done: e.target.checked });
+        renderPlan();
+      } else if (e.target.dataset.del) {
+        Store.remove('plan.tasks', e.target.dataset.del);
+        renderPlan();
+      }
+    });
+    document.getElementById('p-carry').addEventListener('click', function () {
+      var today = todayStr();
+      var all = planList();
+      var overdue = all.filter(function (x) { return !x.done && x.date < today; });
+      if (!overdue.length) { document.getElementById('p-carry-hint').textContent = '没有未完成的旧计划'; return; }
+      overdue.forEach(function (x) { Store.add('plan.tasks', { date: today, text: x.text, done: false }); });
+      dateInput.value = today;
+      renderPlan();
+      document.getElementById('p-carry-hint').textContent = '已顺延 ' + overdue.length + ' 条到今天';
+    });
+    renderPlan();
+
+    /* ---------- 目标追踪 ---------- */
+    var GOAL_SEED = [
+      { name: '小红书粉丝破万', start: 63, current: 63, target: 10000 }
+    ];
+    function goalList() {
+      var arr = Store.get('goals', []);
+      if (!arr.length && !localStorage.getItem('wb.goals_seeded')) {
+        GOAL_SEED.forEach(function (g) { Store.add('goals', g); });
+        localStorage.setItem('wb.goals_seeded', '1');
+        arr = Store.get('goals', []);
+      }
+      return arr;
+    }
+    function pctOf(g) {
+      if (g.target === g.start) return 100;
+      var p = (g.current - g.start) / (g.target - g.start) * 100;
+      return Math.max(0, Math.min(100, Math.round(p)));
+    }
+    function renderGoals() {
+      var arr = goalList();
+      var box = document.getElementById('goal-list');
+      if (!arr.length) { box.innerHTML = '<div class="empty">还没有目标，加一个吧</div>'; return; }
+      box.innerHTML = arr.map(function (g) {
+        var pct = pctOf(g);
+        var done = g.current >= g.target;
+        return '<div class="item"><div class="body"><div style="font-weight:500;">' + escapeHtml(g.name) +
+          ' <span class="muted" style="font-weight:400;font-size:12px;">' + g.current + ' / ' + g.target + '</span>' +
+          (done ? ' <span class="badge green">已达成</span>' : '') + '</div>' +
+          '<div class="progress"><i style="width:' + pct + '%"></i></div>' +
+          '<div class="meta">完成度 ' + pct + '%</div></div>' +
+          '<button class="btn-mini" data-gid="' + g.id + '">删除</button></div>';
+      }).join('');
+    }
+    document.getElementById('g-add').addEventListener('click', function () {
+      var name = document.getElementById('g-name').value.trim();
+      var start = Number(document.getElementById('g-start').value) || 0;
+      var cur = Number(document.getElementById('g-cur').value) || 0;
+      var target = Number(document.getElementById('g-target').value) || 0;
+      if (!name) { alert('先填目标名'); return; }
+      if (target <= start) { alert('目标值要大于起始值'); return; }
+      Store.add('goals', { name: name, start: start, current: cur, target: target });
+      document.getElementById('g-name').value = '';
+      document.getElementById('g-start').value = '';
+      document.getElementById('g-cur').value = '';
+      document.getElementById('g-target').value = '';
+      renderGoals();
+    });
+    document.getElementById('goal-list').addEventListener('click', function (e) {
+      if (e.target.dataset.gid) { Store.remove('goals', e.target.dataset.gid); renderGoals(); }
+    });
+    renderGoals();
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人工作台 · 个人成长</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="growth">
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar">
+        <div>
+          <h1>个人成长</h1>
+          <div class="sub">学习 · 读书 · 灵感</div>
+        </div>
+        <div class="date" id="top-date"></div>
+      </header>
+      <div class="content">
+
+        <h3 class="section-title">学习计划</h3>
+        <div class="card">
+          <div class="form-row">
+            <div class="field w-title"><label>学习内容（如 Python / Agent / MCP）</label>
+              <input id="l-name" type="text" placeholder="要学什么"></div>
+            <div class="field"><label>进度 <span id="l-prog-label">0</span>%</label>
+              <input id="l-prog" type="range" min="0" max="100" value="0" style="width:150px;"></div>
+            <div class="field w-title"><label>备注（可选）</label>
+              <input id="l-note" type="text" placeholder="学完能做什么"></div>
+            <button class="btn-primary" id="l-add">添加</button>
+          </div>
+          <div id="learning-list"></div>
+        </div>
+
+        <h3 class="section-title">读书笔记</h3>
+        <div class="card">
+          <div class="form-row">
+            <div class="field w-title"><label>书名 / 资料</label>
+              <input id="b-book" type="text" placeholder="如：某 NLP 教材"></div>
+            <div class="field w-title"><label>摘录 / 感想</label>
+              <textarea id="b-note" rows="1" placeholder="记一句最有用的"></textarea></div>
+            <button class="btn-primary" id="b-add">添加</button>
+          </div>
+          <div id="book-list"></div>
+        </div>
+
+        <h3 class="section-title">灵感收集</h3>
+        <div class="card">
+          <div class="tag-filter" id="idea-filters"></div>
+          <div class="form-row">
+            <div class="field w-title"><label>灵感</label>
+              <input id="i-text" type="text" placeholder="突然冒出来的想法"></div>
+            <div class="field"><label>标签（逗号分隔）</label>
+              <input id="i-tags" type="text" placeholder="如：选题,复盘"></div>
+            <button class="btn-primary" id="i-add">添加</button>
+          </div>
+          <div id="idea-list"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <nav class="bottom-nav" id="bottomNav"></nav>
+
+  <script src="assets/app.js"></script>
+  <script>
+  (function () {
+    document.getElementById('top-date').textContent = cnDate();
+
+    /* ---------- 学习计划 ---------- */
+    var SEED = [
+      { name: 'Python 基础', progress: 0, note: '打底' },
+      { name: 'AI / 机器学习', progress: 0, note: '' },
+      { name: 'Agent 开发', progress: 0, note: '' },
+      { name: 'MCP 协议', progress: 0, note: '' }
+    ];
+    function learningList() {
+      var arr = Store.get('learning', []);
+      if (!arr.length && !localStorage.getItem('wb.learning_seeded')) {
+        SEED.forEach(function (s) { Store.add('learning', { name: s.name, progress: s.progress, note: s.note }); });
+        localStorage.setItem('wb.learning_seeded', '1');
+        arr = Store.get('learning', []);
+      }
+      return arr;
+    }
+    function renderLearning() {
+      var arr = learningList();
+      document.getElementById('learning-list').innerHTML = arr.length ? arr.map(function (x) {
+        return '<div class="item"><div class="body"><div style="font-weight:500;">' + escapeHtml(x.name) +
+          ' <span style="color:var(--muted);font-weight:400;font-size:12px;">' + x.progress + '%</span></div>' +
+          (x.note ? '<div class="meta">' + escapeHtml(x.note) + '</div>' : '') +
+          '<div class="progress"><i style="width:' + x.progress + '%"></i></div></div>' +
+          '<button class="btn-mini" data-id="' + x.id + '">删除</button></div>';
+      }).join('') : '<div class="empty">还没有学习计划</div>';
+    }
+    var prog = document.getElementById('l-prog');
+    prog.addEventListener('input', function () { document.getElementById('l-prog-label').textContent = prog.value; });
+    document.getElementById('l-add').addEventListener('click', function () {
+      var name = document.getElementById('l-name').value.trim();
+      if (!name) { alert('先填学习内容'); return; }
+      Store.add('learning', { name: name, progress: Number(prog.value), note: document.getElementById('l-note').value.trim() });
+      document.getElementById('l-name').value = '';
+      document.getElementById('l-note').value = '';
+      prog.value = 0; document.getElementById('l-prog-label').textContent = '0';
+      renderLearning();
+    });
+    document.getElementById('learning-list').addEventListener('click', function (e) {
+      if (e.target.classList.contains('btn-mini')) { Store.remove('learning', e.target.dataset.id); renderLearning(); }
+    });
+    renderLearning();
+
+    /* ---------- 读书笔记 ---------- */
+    function renderBooks() {
+      var arr = Store.get('books', []);
+      document.getElementById('book-list').innerHTML = arr.length ? arr.map(function (x) {
+        return '<div class="item"><div class="body"><div style="font-weight:500;">' + escapeHtml(x.book) +
+          '</div>' + (x.note ? '<div class="meta">' + escapeHtml(x.note) + '</div>' : '') + '</div>' +
+          '<button class="btn-mini" data-id="' + x.id + '">删除</button></div>';
+      }).join('') : '<div class="empty">还没有读书笔记</div>';
+    }
+    document.getElementById('b-add').addEventListener('click', function () {
+      var book = document.getElementById('b-book').value.trim();
+      if (!book) { alert('先填书名'); return; }
+      Store.add('books', { book: book, note: document.getElementById('b-note').value.trim() });
+      document.getElementById('b-book').value = '';
+      document.getElementById('b-note').value = '';
+      renderBooks();
+    });
+    document.getElementById('book-list').addEventListener('click', function (e) {
+      if (e.target.classList.contains('btn-mini')) { Store.remove('books', e.target.dataset.id); renderBooks(); }
+    });
+    renderBooks();
+
+    /* ---------- 灵感收集 ---------- */
+    function allTags(arr) {
+      var set = {};
+      arr.forEach(function (x) { (x.tags || []).forEach(function (t) { set[t] = 1; }); });
+      return Object.keys(set);
+    }
+    function renderIdeas(filter) {
+      var arr = Store.get('ideas', []);
+      var tags = allTags(arr);
+      document.getElementById('idea-filters').innerHTML = '<span class="tag-chip ' + (!filter ? 'active' : '') +
+        '" data-tag="">全部</span>' + tags.map(function (t) {
+          return '<span class="tag-chip ' + (filter === t ? 'active' : '') + '" data-tag="' + escapeHtml(t) + '">' + escapeHtml(t) + '</span>';
+        }).join('');
+      var list = filter ? arr.filter(function (x) { return (x.tags || []).indexOf(filter) >= 0; }) : arr;
+      document.getElementById('idea-list').innerHTML = list.length ? list.map(function (x) {
+        return '<div class="item"><div class="body"><div>' + escapeHtml(x.text) + '</div>' +
+          (x.tags && x.tags.length ? '<div class="meta">' + x.tags.map(function (t) { return '<span class="tag">' + escapeHtml(t) + '</span>'; }).join('') + '</div>' : '') +
+          '</div><button class="btn-mini" data-id="' + x.id + '">删除</button></div>';
+      }).join('') : '<div class="empty">还没有灵感，随手记一条</div>';
+    }
+    document.getElementById('i-add').addEventListener('click', function () {
+      var text = document.getElementById('i-text').value.trim();
+      if (!text) { alert('先填灵感'); return; }
+      var tags = document.getElementById('i-tags').value.split(/[,，]/).map(function (s) { return s.trim(); }).filter(Boolean);
+      Store.add('ideas', { text: text, tags: tags });
+      document.getElementById('i-text').value = '';
+      document.getElementById('i-tags').value = '';
+      renderIdeas('');
+    });
+    document.getElementById('idea-list').addEventListener('click', function (e) {
+      if (e.target.classList.contains('btn-mini')) { Store.remove('ideas', e.target.dataset.id); renderIdeas(document.querySelector('.tag-chip.active') ? document.querySelector('.tag-chip.active').dataset.tag : ''); }
+    });
+    document.getElementById('idea-filters').addEventListener('click', function (e) {
+      if (e.target.classList.contains('tag-chip')) renderIdeas(e.target.dataset.tag);
+    });
+    renderIdeas('');
+  })();
+  </script>
+</body>
+</html>

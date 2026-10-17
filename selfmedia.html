@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人工作台 · 自媒体运营</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    .form-row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-bottom:16px;}
+    .field{display:flex;flex-direction:column;gap:4px;}
+    .field label{font-size:12px;color:var(--muted);}
+    .field input{padding:8px 10px;border:1px solid var(--border);border-radius:9px;font-size:13px;outline:none;width:100%;}
+    .field input:focus{border-color:var(--primary);}
+    .w-title{flex:1;min-width:180px;}
+    .btn-primary{background:var(--primary);color:#fff;border:none;border-radius:9px;padding:9px 18px;cursor:pointer;font-size:13px;}
+    .btn-mini{background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;color:var(--muted);}
+    .btn-mini:hover{color:var(--up);border-color:var(--up);}
+    .topic-item{display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:6px;background:#fff;font-size:13px;}
+    .tbl{width:100%;border-collapse:collapse;}
+    .tbl th,.tbl td{padding:9px 8px;border-bottom:1px solid var(--border);font-size:13px;text-align:left;}
+    .tbl th{color:var(--muted);font-weight:500;}
+    .tbl td.num{text-align:right;font-variant-numeric:tabular-nums;}
+    .tbl tr:last-child td{border-bottom:none;}
+    .rate{font-weight:600;color:var(--green);font-variant-numeric:tabular-nums;}
+  </style>
+</head>
+<body data-page="selfmedia">
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar">
+        <div>
+          <h1>自媒体运营</h1>
+          <div class="sub">小红书 · 纳斯达克分析 · 冲 1 万粉</div>
+        </div>
+        <div class="date" id="top-date"></div>
+      </header>
+      <div class="content">
+
+        <h3 class="section-title">选题热点</h3>
+        <div class="card">
+          <div class="form-row" style="margin-bottom:12px;">
+            <div class="field w-title"><label>想追踪的选题 / 热点关键词</label>
+              <input id="topic-input" type="text" placeholder="如：纳指回调、美联储降息预期、AI 算力…"></div>
+            <button class="btn-primary" id="topic-add">添加</button>
+          </div>
+          <div id="topic-list"></div>
+        </div>
+
+        <h3 class="section-title">发布记录</h3>
+        <div class="card">
+          <div class="form-row">
+            <div class="field w-title"><label>笔记标题</label>
+              <input id="p-title" type="text" placeholder="这期发了什么"></div>
+            <div class="field"><label>日期</label><input id="p-date" type="date"></div>
+            <div class="field"><label>浏览</label><input id="p-views" type="number" min="0" placeholder="0"></div>
+            <div class="field"><label>收藏</label><input id="p-fav" type="number" min="0" placeholder="0"></div>
+            <div class="field"><label>评论</label><input id="p-cmt" type="number" min="0" placeholder="0"></div>
+            <div class="field"><label>点赞</label><input id="p-like" type="number" min="0" placeholder="0"></div>
+            <button class="btn-primary" id="post-add">记录</button>
+          </div>
+          <table class="tbl">
+            <thead><tr><th>标题</th><th>日期</th><th class="num">浏览</th><th class="num">收藏</th><th class="num">评论</th><th class="num">点赞</th><th class="num">互动率</th><th></th></tr></thead>
+            <tbody id="post-body"></tbody>
+          </table>
+        </div>
+
+        <h3 class="section-title">数据复盘</h3>
+        <div class="grid grid-4">
+          <div class="card stat"><span class="ic">◎</span><span class="num" id="r-total-views">0</span><span class="label">累计浏览</span></div>
+          <div class="card stat"><span class="ic">◎</span><span class="num" id="r-avg-rate">0%</span><span class="label">平均互动率</span></div>
+          <div class="card stat"><span class="ic">★</span><span class="num" id="r-best-rate">0%</span><span class="label">最佳互动率</span></div>
+          <div class="card stat"><span class="ic">✎</span><span class="num" id="r-count">0</span><span class="label">笔记数</span></div>
+        </div>
+        <div class="card" style="margin-top:16px;">
+          <h2>互动率 Top 3</h2>
+          <div id="best-list"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <nav class="bottom-nav" id="bottomNav"></nav>
+
+  <script src="assets/app.js"></script>
+  <script>
+  (function () {
+    document.getElementById('top-date').textContent = cnDate();
+    var dateInput = document.getElementById('p-date');
+    if (dateInput) dateInput.value = todayStr();
+
+    /* ---------- 选题热点 ---------- */
+    function renderTopics() {
+      var list = Store.get('topics', []);
+      var el = document.getElementById('topic-list');
+      el.innerHTML = list.length ? list.map(function (t) {
+        return '<div class="topic-item"><span>' + escapeHtml(t.text) + '</span>' +
+          '<button class="btn-mini" data-id="' + t.id + '">删除</button></div>';
+      }).join('') : '<div class="empty">还没有追踪的选题，上面加一条</div>';
+    }
+    function addTopic() {
+      var inp = document.getElementById('topic-input');
+      var v = inp.value.trim();
+      if (!v) return;
+      Store.add('topics', { text: v });
+      inp.value = '';
+      renderTopics();
+    }
+    document.getElementById('topic-add').addEventListener('click', addTopic);
+    document.getElementById('topic-input').addEventListener('keydown', function (e) { if (e.key === 'Enter') addTopic(); });
+    document.getElementById('topic-list').addEventListener('click', function (e) {
+      if (e.target.classList.contains('btn-mini')) {
+        Store.remove('topics', e.target.dataset.id);
+        renderTopics();
+      }
+    });
+    renderTopics();
+
+    /* ---------- 发布记录 ---------- */
+    function rateOf(p) {
+      var v = Number(p.views) || 0;
+      if (v <= 0) return 0;
+      return ((Number(p.fav) + Number(p.cmt) + Number(p.like)) / v) * 100;
+    }
+    function renderPosts() {
+      var posts = Store.get('posts', []);
+      document.getElementById('post-body').innerHTML = posts.length ? posts.map(function (p) {
+        return '<tr><td>' + escapeHtml(p.title) + '</td><td class="muted">' + (p.date || '') + '</td>' +
+          '<td class="num">' + (Number(p.views) || 0).toLocaleString() + '</td>' +
+          '<td class="num">' + (Number(p.fav) || 0) + '</td>' +
+          '<td class="num">' + (Number(p.cmt) || 0) + '</td>' +
+          '<td class="num">' + (Number(p.like) || 0) + '</td>' +
+          '<td class="num rate">' + rateOf(p).toFixed(1) + '%</td>' +
+          '<td><button class="btn-mini" data-id="' + p.id + '">删除</button></td></tr>';
+      }).join('') : '<tr><td colspan="8" class="muted">还没有记录，发了一期就填进来</td></tr>';
+      renderSummary(posts);
+    }
+    function renderSummary(posts) {
+      var totalViews = posts.reduce(function (s, p) { return s + (Number(p.views) || 0); }, 0);
+      var rates = posts.map(rateOf).filter(function (r) { return r > 0; });
+      var avg = rates.length ? rates.reduce(function (a, b) { return a + b; }, 0) / rates.length : 0;
+      var best = posts.length ? Math.max.apply(null, posts.map(rateOf)) : 0;
+      document.getElementById('r-total-views').textContent = totalViews.toLocaleString();
+      document.getElementById('r-avg-rate').textContent = avg.toFixed(1) + '%';
+      document.getElementById('r-best-rate').textContent = best.toFixed(1) + '%';
+      document.getElementById('r-count').textContent = posts.length;
+      var top = posts.slice().sort(function (a, b) { return rateOf(b) - rateOf(a); }).slice(0, 3);
+      document.getElementById('best-list').innerHTML = top.length ? top.map(function (p) {
+        return '<div class="mini-index"><span>' + escapeHtml(p.title) +
+          '</span><b class="rate">' + rateOf(p).toFixed(1) + '%</b></div>';
+      }).join('') : '<div class="empty">暂无数据</div>';
+    }
+    document.getElementById('post-add').addEventListener('click', function () {
+      var title = document.getElementById('p-title').value.trim();
+      if (!title) { alert('先填笔记标题'); return; }
+      Store.add('posts', {
+        title: title,
+        date: document.getElementById('p-date').value,
+        views: document.getElementById('p-views').value,
+        fav: document.getElementById('p-fav').value,
+        cmt: document.getElementById('p-cmt').value,
+        like: document.getElementById('p-like').value
+      });
+      ['p-title', 'p-views', 'p-fav', 'p-cmt', 'p-like'].forEach(function (id) { document.getElementById(id).value = ''; });
+      renderPosts();
+    });
+    document.getElementById('post-body').addEventListener('click', function (e) {
+      if (e.target.classList.contains('btn-mini')) {
+        if (confirm('确定删除这条记录？')) { Store.remove('posts', e.target.dataset.id); renderPosts(); }
+      }
+    });
+    renderPosts();
+  })();
+  </script>
+</body>
+</html>

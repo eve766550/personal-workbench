@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人工作台 · 总览台</title>
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="index">
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar">
+        <div>
+          <h1>总览台</h1>
+          <div class="sub">不为计划所困，只为成长留痕</div>
+        </div>
+        <div class="date" id="top-date"></div>
+      </header>
+      <div class="content">
+
+        <div class="grid grid-2">
+          <div class="card">
+            <h2>今日焦点 · AI 头条 <span class="hint" id="hint-news">来自 AI 资讯</span></h2>
+            <div class="focus" id="focus-news"></div>
+          </div>
+          <div class="card">
+            <h2>今日焦点 · 美股 <span class="hint" id="hint-market">红涨绿跌</span></h2>
+            <div class="focus" id="focus-market"></div>
+          </div>
+        </div>
+
+        <div class="grid grid-4" style="margin-top:16px;">
+          <div class="card stat"><span class="ic">✓</span><span class="num" id="stat-done">0</span><span class="label">今日完成待办</span></div>
+          <div class="card stat"><span class="ic">✚</span><span class="num" id="stat-learning">0</span><span class="label">进行中学习</span></div>
+          <div class="card stat"><span class="ic">✦</span><span class="num" id="stat-ideas">0</span><span class="label">灵感收集</span></div>
+          <div class="card stat"><span class="ic">◷</span><span class="num" id="stat-streak">0</span><span class="label">连续打卡(天)</span></div>
+        </div>
+
+        <h3 class="section-title">本周小结</h3>
+        <div class="card"><div id="weekly"></div></div>
+
+        <h3 class="section-title">今日待办</h3>
+        <div class="card">
+          <div class="todo-add">
+            <input id="todo-input" type="text" placeholder="加一条今天要做的事，回车也行…">
+            <button id="todo-add-btn">添加</button>
+          </div>
+          <ul class="todo-list" id="todo-list"></ul>
+        </div>
+
+        <h3 class="section-title">快捷入口</h3>
+        <div class="quick">
+          <a href="news.html">AI 热点资讯</a>
+          <a href="market.html">美股行情</a>
+          <a href="selfmedia.html">自媒体运营</a>
+          <a href="growth.html">个人成长</a>
+          <a href="plan.html">个人计划</a>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <nav class="bottom-nav" id="bottomNav"></nav>
+  <script src="data/ai-news.js"></script>
+  <script src="data/us-market.js"></script>
+  <script src="assets/app.js"></script>
+  <script>document.getElementById('top-date').textContent = cnDate();</script>
+</body>
+</html>

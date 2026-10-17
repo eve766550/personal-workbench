@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人工作台 · 美股行情</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    .tbl{width:100%;border-collapse:collapse;}
+    .tbl th,.tbl td{padding:9px 8px;border-bottom:1px solid var(--border);font-size:13px;text-align:left;}
+    .tbl th{color:var(--muted);font-weight:500;}
+    .tbl td.num{text-align:right;font-variant-numeric:tabular-nums;}
+    .tbl tr:last-child td{border-bottom:none;}
+    .pct{font-weight:600;font-variant-numeric:tabular-nums;}
+    .bar{height:7px;border-radius:4px;background:var(--border);overflow:hidden;margin-top:4px;}
+    .bar>i{display:block;height:100%;}
+    .bar>i.up{background:var(--up);}
+    .bar>i.down{background:var(--down);}
+    .sector-row{margin:12px 0;}
+    .sector-row .sr-top{display:flex;justify-content:space-between;font-size:13px;align-items:center;}
+  </style>
+</head>
+<body data-page="market">
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar">
+        <div>
+          <h1>美股行情</h1>
+          <div class="sub" id="sub">红涨绿跌</div>
+        </div>
+        <div class="date" id="top-date"></div>
+      </header>
+      <div class="content">
+
+        <div class="card" style="margin-bottom:16px;">
+          <h2>市场小结 <span class="hint" id="mkt-date"></span></h2>
+          <p id="mkt-summary" class="muted">行情更新中…</p>
+        </div>
+
+        <div class="grid grid-2">
+          <div class="card">
+            <h2>指数</h2>
+            <table class="tbl">
+              <thead><tr><th>名称</th><th class="num">点位</th><th class="num">涨跌</th><th class="num">涨跌幅</th></tr></thead>
+              <tbody id="idx-body"></tbody>
+            </table>
+          </div>
+          <div class="card">
+            <h2>板块</h2>
+            <div id="sector-wrap"></div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:16px;">
+          <h2>个股（科技巨头 + 台积电）</h2>
+          <table class="tbl">
+            <thead><tr><th>名称</th><th>代码</th><th class="num">价格 ($)</th><th class="num">涨跌幅</th></tr></thead>
+            <tbody id="stock-body"></tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <nav class="bottom-nav" id="bottomNav"></nav>
+
+  <script src="data/us-market.js"></script>
+  <script src="assets/app.js"></script>
+  <script>
+  (function () {
+    var mkt = window.US_MARKET || { indices: [], stocks: [], sectors: [], summary: '', date: '', updatedAt: '' };
+    var $ = function (id) { return document.getElementById(id); };
+    function pctCell(v) {
+      var up = v >= 0, s = up ? '+' : '';
+      return '<span class="pct ' + (up ? 'up' : 'down') + '">' + s + v.toFixed(2) + '%</span>';
+    }
+    $('top-date').textContent = cnDate();
+    if (mkt.date) $('mkt-date').textContent = mkt.date + '（美东收盘）· 更新 ' + mkt.updatedAt;
+    if (mkt.summary) $('mkt-summary').textContent = mkt.summary;
+
+    $('idx-body').innerHTML = (mkt.indices || []).map(function (x) {
+      var up = x.change >= 0, s = up ? '+' : '';
+      var chg = (x.change != null) ? s + x.change.toFixed(2) : '-';
+      return '<tr><td>' + x.name + '</td>' +
+             '<td class="num">' + x.value.toLocaleString() + '</td>' +
+             '<td class="num ' + (up ? 'up' : 'down') + '">' + chg + '</td>' +
+             '<td class="num">' + pctCell(x.changePct) + '</td></tr>';
+    }).join('') || '<tr><td colspan="4" class="muted">行情更新中…</td></tr>';
+
+    $('stock-body').innerHTML = (mkt.stocks || []).map(function (x) {
+      return '<tr><td>' + x.name + '</td>' +
+             '<td class="muted">' + x.code + '</td>' +
+             '<td class="num">' + x.value.toLocaleString() + '</td>' +
+             '<td class="num">' + pctCell(x.changePct) + '</td></tr>';
+    }).join('') || '<tr><td colspan="4" class="muted">行情更新中…</td></tr>';
+
+    $('sector-wrap').innerHTML = (mkt.sectors || []).map(function (s) {
+      var up = s.changePct >= 0;
+      var w = Math.min(50, Math.abs(s.changePct) * 9);
+      return '<div class="sector-row"><div class="sr-top"><span>' + s.name + '</span>' +
+             pctCell(s.changePct) + '</div><div class="bar"><i class="' + (up ? 'up' : 'down') +
+             '" style="width:' + w + '%"></i></div></div>';
+    }).join('') || '<div class="muted">—</div>';
+  })();
+  </script>
+</body>
+</html>

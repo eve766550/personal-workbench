@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>个人工作台 · AI 热点资讯</title>
+  <link rel="stylesheet" href="assets/style.css">
+  <style>
+    .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+    .filter-btn{padding:7px 14px;border:1px solid var(--border);border-radius:20px;background:#fff;font-size:13px;cursor:pointer;color:var(--text);}
+    .filter-btn.active{background:var(--primary);color:#fff;border-color:var(--primary);}
+    .news-item{padding:14px 0;border-bottom:1px solid var(--border);}
+    .news-item:last-child{border-bottom:none;}
+    .ni-top{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+    .ni-src{font-size:12px;}
+    .ni-title{font-size:15px;font-weight:500;color:var(--text);line-height:1.45;display:block;}
+    .ni-title:hover{color:var(--primary);}
+    .ni-sum{font-size:13px;color:var(--muted);margin-top:6px;}
+    .ni-reason{font-size:13px;color:var(--text);background:var(--primary-soft);padding:8px 10px;border-radius:8px;margin-top:8px;}
+    .fav-btn{margin-top:9px;background:none;border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:12px;cursor:pointer;color:var(--muted);}
+    .fav-btn.on{color:var(--orange);border-color:var(--orange);}
+  </style>
+</head>
+<body data-page="news">
+  <div class="layout">
+    <aside class="sidebar" id="sidebar"></aside>
+    <div class="main">
+      <header class="topbar">
+        <div>
+          <h1>AI 热点资讯</h1>
+          <div class="sub" id="news-date">关注你要追踪的 AI 动态</div>
+        </div>
+        <div class="date" id="top-date"></div>
+      </header>
+      <div class="content">
+
+        <div class="filters" id="filters">
+          <button class="filter-btn active" data-cat="">全部</button>
+          <button class="filter-btn" data-cat="模型发布">模型发布</button>
+          <button class="filter-btn" data-cat="论文研究">论文研究</button>
+          <button class="filter-btn" data-cat="行业动态">行业动态</button>
+        </div>
+
+        <div class="card">
+          <div id="news-list"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+  <nav class="bottom-nav" id="bottomNav"></nav>
+
+  <script src="data/ai-news.js"></script>
+  <script src="assets/app.js"></script>
+  <script>
+  (function () {
+    var data = window.AI_NEWS || { items: [], updatedAt: '' };
+    var items = data.items || [];
+    var favKey = 'news_fav';
+    var favs = Store.get(favKey, []);
+
+    function isFav(u) { return favs.indexOf(u) >= 0; }
+    function currentCat() {
+      var a = document.querySelector('.filter-btn.active');
+      return a ? a.dataset.cat : '';
+    }
+    function render() {
+      var cat = currentCat();
+      var list = items.filter(function (it) { return !cat || it.category === cat; });
+      document.getElementById('news-list').innerHTML = list.length ? list.map(function (it) {
+        var f = isFav(it.url);
+        return '<div class="news-item">' +
+          '<div class="ni-top"><span class="tag">' + (it.category || '资讯') + '</span>' +
+          '<span class="muted ni-src">' + (it.source || '') + '</span></div>' +
+          '<a class="ni-title" href="' + it.url + '" target="_blank" rel="noopener">' + escapeHtml(it.title) + '</a>' +
+          (it.summary ? '<div class="ni-sum">' + escapeHtml(it.summary) + '</div>' : '') +
+          (it.reason ? '<div class="ni-reason">关注理由：' + escapeHtml(it.reason) + '</div>' : '') +
+          '<button class="fav-btn ' + (f ? 'on' : '') + '" data-url="' + it.url + '">' +
+          (f ? '★ 已收藏' : '☆ 收藏') + '</button>' +
+          '</div>';
+      }).join('') : '<div class="empty">暂无该类资讯</div>';
+    }
+
+    document.querySelectorAll('.filter-btn').forEach(function (b) {
+      b.addEventListener('click', function () {
+        document.querySelectorAll('.filter-btn').forEach(function (x) { x.classList.remove('active'); });
+        b.classList.add('active');
+        render();
+      });
+    });
+
+    document.getElementById('news-list').addEventListener('click', function (e) {
+      if (e.target.classList.contains('fav-btn')) {
+        var u = e.target.dataset.url;
+        favs = isFav(u) ? favs.filter(function (x) { return x !== u; }) : favs.concat([u]);
+        Store.set(favKey, favs);
+        render();
+      }
+    });
+
+    render();
+    document.getElementById('news-date').textContent = '更新于 ' + data.updatedAt + ' · 已收藏 ' + favs.length + ' 条';
+    document.getElementById('top-date').textContent = cnDate();
+  })();
+  </script>
+</body>
+</html>
